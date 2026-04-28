@@ -21,8 +21,11 @@ class LLMClient:
         api_key: Optional[str] = None,
         base_url: Optional[str] = None,
         model: Optional[str] = None,
-        timeout: float = 300.0
+        timeout: float = float(os.environ.get('LLM_HTTP_TIMEOUT', '1800'))
     ):
+        # B8-Mod (v285.0/P1966 R8): bump default timeout from 300s to 1800s
+        # to handle slow CPU-bound LLM calls (e.g. 8b on 8GB Docker).
+        # Override via env LLM_HTTP_TIMEOUT.
         self.api_key = api_key or Config.LLM_API_KEY
         self.base_url = base_url or Config.LLM_BASE_URL
         self.model = model or Config.LLM_MODEL_NAME
