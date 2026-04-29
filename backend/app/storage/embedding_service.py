@@ -25,8 +25,16 @@ class EmbeddingService:
         model: Optional[str] = None,
         base_url: Optional[str] = None,
         max_retries: int = 3,
-        timeout: int = 30,
+        timeout: Optional[int] = None,
     ):
+        # B8-Mod (v285.0/P1966 R7): make embedding HTTP-timeout env-configurable
+        # via EMBEDDING_HTTP_TIMEOUT (seconds). Default raised 30s -> 600s for
+        # slow CPU-only Ollama setups where nomic-embed-text takes 30-60s under
+        # parallel ReACT load and trips the original 30s-default with
+        # "Read timed out" → reportgeneratefailed.
+        import os as _os
+        if timeout is None:
+            timeout = int(_os.environ.get('EMBEDDING_HTTP_TIMEOUT', '600'))
         self.model = model or Config.EMBEDDING_MODEL
         self.base_url = (base_url or Config.EMBEDDING_BASE_URL).rstrip('/')
         self.max_retries = max_retries
