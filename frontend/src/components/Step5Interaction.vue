@@ -283,6 +283,9 @@
                   <span></span>
                   <span></span>
                 </div>
+                <div v-if="chatTarget === 'report_agent'" class="thinking-timer">
+                  Thinking{{ thinkingElapsed >= 10 ? ' — ' + thinkingElapsed + 's (LLM may take up to 10 min)' : '...' }}
+                </div>
               </div>
             </div>
           </div>
@@ -438,6 +441,18 @@ const chatHistoryCache = ref({}) // Cache all chat history: { 'report_agent': []
 const isSending = ref(false)
 const chatMessages = ref(null)
 const chatInputRef = ref(null)
+
+// Thinking timer — shows elapsed seconds while report agent is processing
+const thinkingElapsed = ref(0)
+let _thinkingTimer = null
+const startThinkingTimer = () => {
+  thinkingElapsed.value = 0
+  _thinkingTimer = setInterval(() => { thinkingElapsed.value++ }, 1000)
+}
+const stopThinkingTimer = () => {
+  if (_thinkingTimer) { clearInterval(_thinkingTimer); _thinkingTimer = null }
+  thinkingElapsed.value = 0
+}
 
 // Survey State
 const selectedAgents = ref(new Set())
@@ -654,7 +669,8 @@ const sendMessage = async () => {
   
   scrollToBottom()
   isSending.value = true
-  
+  if (chatTarget.value === 'report_agent') startThinkingTimer()
+
   try {
     if (chatTarget.value === 'report_agent') {
       await sendToReportAgent(message)
@@ -669,6 +685,7 @@ const sendMessage = async () => {
       timestamp: new Date().toISOString()
     })
   } finally {
+    stopThinkingTimer()
     isSending.value = false
     scrollToBottom()
     // Auto-save chat history to cache
@@ -2089,6 +2106,14 @@ watch(() => props.simulationId, (newId) => {
 @keyframes typing {
   0%, 60%, 100% { transform: translateY(0); }
   30% { transform: translateY(-8px); }
+}
+
+/* Elapsed-time label shown during long report-agent LLM calls */
+.thinking-timer {
+  margin-top: 6px;
+  font-size: 11px;
+  color: #9CA3AF;
+  font-style: italic;
 }
 
 /* Chat Input */

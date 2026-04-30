@@ -45,7 +45,12 @@ export const getReport = (reportId) => {
 /**
  * Chat with Report Agent
  * @param {Object} data - { simulation_id, message, chat_history? }
+ *
+ * NOTE: LLM generation takes 5-6 minutes. We use a 15-minute per-request
+ * timeout override and NO retry — retrying a timed-out 5-min LLM call would
+ * restart the full generation and never converge. The default axios instance
+ * timeout of 5 min was causing silent failures.
  */
 export const chatWithReport = (data) => {
-  return requestWithRetry(() => service.post('/api/report/chat', data), 3, 1000)
+  return service.post('/api/report/chat', data, { timeout: 900000 })
 }
